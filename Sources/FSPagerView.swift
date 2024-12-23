@@ -332,6 +332,11 @@ open class FSPagerView: UIView,UICollectionViewDataSource,UICollectionViewDelega
         }
     }
     
+    @objc
+    open func forceInvalidate() {
+        self.collectionViewLayout.forceInvalidate()
+    }
+    
     #if TARGET_INTERFACE_BUILDER
     
     open override func prepareForInterfaceBuilder() {
