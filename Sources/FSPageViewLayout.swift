@@ -224,7 +224,6 @@ class FSPagerViewLayout: UICollectionViewLayout {
             } else {
                 return origin.x - (collectionView.frame.width*0.5-self.actualItemSize.width*0.5)
             }
-            return contentOffsetX
         }()
         let contentOffsetY: CGFloat = {
             if self.scrollDirection == .horizontal {
