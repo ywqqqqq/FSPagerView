@@ -14,6 +14,8 @@ class FSPagerViewLayout: UICollectionViewLayout {
     internal var leadingSpacing: CGFloat = 0
     internal var itemSpacing: CGFloat = 0
     internal var needsReprepare = true
+    internal var customLeadingSpacing: CGFloat?
+    
     internal var scrollDirection: FSPagerView.ScrollDirection = .horizontal
     
     open override class var layoutAttributesClass: AnyClass {
@@ -75,7 +77,12 @@ class FSPagerViewLayout: UICollectionViewLayout {
             return pagerView.interitemSpacing
         }()
         self.scrollDirection = pagerView.scrollDirection
-        self.leadingSpacing = self.scrollDirection == .horizontal ? (collectionView.frame.width-self.actualItemSize.width)*0.5 : (collectionView.frame.height-self.actualItemSize.height)*0.5
+        // 改变当前item的位置（默认为居中）
+        if let customLeadingSpacing {
+            self.leadingSpacing = customLeadingSpacing
+        } else {
+            self.leadingSpacing = self.scrollDirection == .horizontal ? (collectionView.frame.width-self.actualItemSize.width)*0.5 : (collectionView.frame.height-self.actualItemSize.height)*0.5
+        }
         self.itemSpacing = (self.scrollDirection == .horizontal ? self.actualItemSize.width : self.actualItemSize.height) + self.actualInteritemSpacing
         
         // Calculate and cache contentSize, rather than calculating each time
@@ -212,7 +219,11 @@ class FSPagerViewLayout: UICollectionViewLayout {
             if self.scrollDirection == .vertical {
                 return 0
             }
-            let contentOffsetX = origin.x - (collectionView.frame.width*0.5-self.actualItemSize.width*0.5)
+            if let customLeadingSpacing {
+                return origin.x - self.leadingSpacing
+            } else {
+                return origin.x - (collectionView.frame.width*0.5-self.actualItemSize.width*0.5)
+            }
             return contentOffsetX
         }()
         let contentOffsetY: CGFloat = {

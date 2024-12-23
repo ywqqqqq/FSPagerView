@@ -192,6 +192,15 @@ open class FSPagerView: UIView,UICollectionViewDataSource,UICollectionViewDelega
         }
     }
     
+    /// 水平偏移量
+    @objc
+    open var leadingSpacing: CGFloat = 0 {
+        didSet {
+            self.collectionViewLayout.customLeadingSpacing = leadingSpacing
+            self.collectionViewLayout.forceInvalidate()
+        }
+    }
+    
     // MARK: - Public readonly-properties
     
     /// Returns whether the user has touched the content to initiate scrolling.
@@ -245,6 +254,40 @@ open class FSPagerView: UIView,UICollectionViewDataSource,UICollectionViewDelega
                 ruler = self.collectionView.bounds.midY
             }
             return abs(ruler-leftCenter) < abs(ruler-rightCenter)
+        }
+        let indexPath = sortedIndexPaths.first
+        if let indexPath = indexPath {
+            return indexPath
+        }
+        return IndexPath(item: 0, section: 0)
+    }
+    fileprivate var leadingmostIndexPath: IndexPath {
+        guard self.numberOfItems > 0, self.collectionView.contentSize != .zero else {
+            return IndexPath(item: 0, section: 0)
+        }
+        let sortedIndexPaths = self.collectionView.indexPathsForVisibleItems.sorted { (l, r) -> Bool in
+            let leftFrame = self.collectionViewLayout.frame(for: l)
+            let rightFrame = self.collectionViewLayout.frame(for: r)
+            var leftMaxX: CGFloat,rightMaxX: CGFloat,ruler: CGFloat
+            // 获取每个项目的右边缘
+            leftMaxX = leftFrame.maxX
+            rightMaxX = rightFrame.maxX
+            
+            // 计算参考位置 ruler
+            ruler = self.collectionView.bounds.midX - self.collectionView.bounds.width * 0.5 + self.collectionViewLayout.leadingSpacing
+        
+            let leftDiff = leftMaxX - ruler
+            let rightDiff = rightMaxX - ruler
+            
+            // 处理负值，使负值排到最后
+            if leftDiff < 0 && rightDiff >= 0 {
+                return false  // left排到后面
+            } else if rightDiff < 0 && leftDiff >= 0 {
+                return true  // right排到后面
+            }
+            
+            // 如果两个差值都是正的或者都是负的，则按照距离排序
+            return abs(leftDiff) < abs(rightDiff)
         }
         let indexPath = sortedIndexPaths.first
         if let indexPath = indexPath {
@@ -585,7 +628,7 @@ open class FSPagerView: UIView,UICollectionViewDataSource,UICollectionViewDelega
             return
         }
         let contentOffset: CGPoint = {
-            let indexPath = self.centermostIndexPath
+            let indexPath = self.leadingSpacing > 0 ? self.leadingmostIndexPath : self.centermostIndexPath
             let section = self.numberOfSections > 1 ? (indexPath.section+(indexPath.item+1)/self.numberOfItems) : 0
             let item = (indexPath.item+1) % self.numberOfItems
             return self.collectionViewLayout.contentOffset(for: IndexPath(item: item, section: section))
@@ -604,7 +647,7 @@ open class FSPagerView: UIView,UICollectionViewDataSource,UICollectionViewDelega
     fileprivate func nearbyIndexPath(for index: Int) -> IndexPath {
         // Is there a better algorithm?
         let currentIndex = self.currentIndex
-        let currentSection = self.centermostIndexPath.section
+        let currentSection = self.leadingSpacing > 0 ? self.leadingmostIndexPath.section : self.centermostIndexPath.section
         if abs(currentIndex-index) <= self.numberOfItems/2 {
             return IndexPath(item: index, section: currentSection)
         } else if (index-currentIndex >= 0) {
